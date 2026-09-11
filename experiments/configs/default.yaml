@@ -1,0 +1,12 @@
+seed_range: [0, 14]
+num_tenants: 8
+timesteps: 200
+forecast_accuracy: 0.7
+burst_correlation: 0.2
+shared_node_capacity_mb: 64000
+policies:
+  - reactive
+  - independent_prewarm
+  - faascamp_style
+  - oracle
+  - proposed_policy

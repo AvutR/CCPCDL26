@@ -1,0 +1,29 @@
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+ENV/
+
+# Editor / OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Experiment outputs
+experiments/results/*.csv
+experiments/results/*.json
+experiments/results/*.pkl
+experiments/results/*.png
+!experiments/results/.gitkeep
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.fdb_latexmk
+paper/*.fls
+paper/*.log
+paper/*.out
+paper/*.pdf
+paper/*.synctex.gz
