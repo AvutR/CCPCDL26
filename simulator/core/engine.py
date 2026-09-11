@@ -31,11 +31,7 @@ class SimulationResult:
 
 
 class SimulatorEngine:
-    """Core event loop for the serverless sandbox scheduler.
-
-    A minimal implementation is provided so the repo can run end-to-end with a
-    placeholder policy before richer logic is added.
-    """
+    """Core event loop for the serverless sandbox scheduler."""
 
     def __init__(self, policy: Any, capacity: float = 64.0):
         self.policy = policy
@@ -44,23 +40,34 @@ class SimulatorEngine:
             "warm_pool": {},
             "tenant_state": {},
             "time": 0,
+            "capacity_mb": capacity,
+            "timestep_candidates": {},
         }
 
     def run(self, events: List[Event]) -> SimulationResult:
         result = SimulationResult()
+        grouped = {}
         for event in events:
-            self.state["time"] = event.timestep
-            self.policy.observe(event, self.state)
-            decision = self.policy.decide(event, self.state)
+            grouped.setdefault(event.timestep, []).append(event)
 
-            result.events_processed += 1
-            if decision.get("cold_start", False):
-                result.cold_starts += 1
-                result.total_latency_ms += float(decision.get("latency_ms", 0.0))
-            else:
-                result.warm_hits += 1
+        for timestep in sorted(grouped):
+            batch = grouped[timestep]
+            self.state["time"] = timestep
+            self.state["timestep_candidates"] = []
+            for event in batch:
+                self.policy.observe(event, self.state)
+                self.state["timestep_candidates"].append(event)
 
-            self.policy.after_decision(event, decision, self.state)
+            for event in batch:
+                decision = self.policy.decide(event, self.state)
+                result.events_processed += 1
+                if decision.get("cold_start", False):
+                    result.cold_starts += 1
+                    result.total_latency_ms += float(decision.get("latency_ms", 0.0))
+                else:
+                    result.warm_hits += 1
+
+                self.policy.after_decision(event, decision, self.state)
 
         result.metrics = {
             "capacity": self.capacity,

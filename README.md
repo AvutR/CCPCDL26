@@ -49,6 +49,25 @@ Full derivation in `docs/formal_model.md`.
 Cut for time: MPC baseline, RL baseline, live cluster deployment. Note as
 future work, not attempted this cycle.
 
+## 3.1 Locked arbitration policy (concrete implementation)
+
+This project locks the arbitration policy to the following first-cut algorithm:
+
+1. For each timestep, collect all nonzero predicted probabilities for every
+   (tenant, tool) pair in the batch.
+2. Compute expected marginal value using the objective-derived score:
+   `value_{i,k,t} = w_i × P_i,k,t(need) × cold_start_cost_avoided − holding_cost_{i,k}`.
+3. Sort all candidates by descending marginal value.
+4. Greedily admit candidates into the shared warm pool while capacity remains,
+   keeping the highest-value entries resident.
+5. If a new candidate exceeds the lowest-value current resident, evict the
+   lowest-value resident and admit the higher-value candidate.
+6. A request is considered a warm hit when the predicted tool for the tenant is
+   in the current warm pool for that timestep.
+
+This is directly implementable, requires no solver, and matches the novelty of
+turning many per-tenant forecasts into one shared ranking under capacity.
+
 ## 4. Repo structure
 
 ```text
@@ -105,6 +124,21 @@ control-plane delay modeling, synthetic calibrated traces) — this is
 expected practice, not a weakness, if disclosed.
 - Frame all conclusions as relative comparisons under the simulated model,
 not absolute real-world performance claims.
+
+## 7.1 Locked metrics table
+
+| Metric | Definition | Unit | Lock status |
+| --- | --- | --- | --- |
+| P50 latency | median latency for completed tool requests | ms | Locked |
+| P95 latency | 95th percentile latency | ms | Locked |
+| P99 latency | 99th percentile latency | ms | Locked |
+| Cold-start rate | fraction of requests requiring a cold sandbox start | % | Locked |
+| Warm memory-hours | sum of warm sandbox memory held over time | GB·h | Locked |
+| Total cost | warm cost + cold-start penalty + eviction cost + SLO penalty | normalized cost units | Locked |
+| SLO violations | requests whose latency exceeds the configured SLO threshold | count / % | Locked |
+| Fairness | per-tenant warm-share and weighted allocation balance | ratio | Locked |
+
+The full metric semantics are recorded in [docs/metrics.md](docs/metrics.md).
 
 ## 8. Day-by-day plan
 
