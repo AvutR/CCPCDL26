@@ -1,0 +1,5 @@
+tool_id,mem_mb,image_pull_ms,runtime_init_ms,exec_duration_ms
+browser,1024,800,1000,500
+python,512,300,500,250
+sql,256,200,300,150
+shell,256,250,400,200
