@@ -5,7 +5,7 @@
 - `docs/trace_schema.md` is frozen for the sprint.
 - `simulator/policies/base_policy.py` is frozen for the sprint.
 - The required metrics table is locked in `docs/metrics.md`.
-- The policy design is locked to the greedy marginal-value knapsack described in `docs/policy_design.md`.
+- The policy design is locked to the greedy marginal-value density knapsack described in `docs/policy_design.md`.
 
 ## Coordination actions
 
@@ -16,17 +16,18 @@
 
 ## Policy design summary
 
-For each (tenant, tool) forecast with nonzero probability:
+For each (tenant, tool) forecast with nonzero probability, compute value
+density — value per unit of shared capacity consumed:
 
-value = w_i × P(need) × cold_start_cost_avoided − holding_cost
+M = (w_i × P(need) × cold_start_cost_avoided) / (mem_footprint + η × prewarm_cost)
 
 At each timestep:
 
 1. Enumerate all nonzero predicted candidate pairs.
-2. Compute their marginal value.
-3. Sort descending by marginal value.
-4. Admit the highest-value candidates into the shared warm pool while capacity remains.
-5. If a new candidate exceeds the lowest-value resident, evict the lowest-value current resident and replace it.
+2. Compute their marginal value density M.
+3. Sort descending by M.
+4. Admit the highest-density candidates into the shared warm pool while capacity remains.
+5. If a new candidate's M exceeds the lowest-density resident, evict the lowest-density current resident and replace it.
 6. Keep the warm pool aligned with the formal model objective and capacity constraint.
 
-This is the exact resource-allocation interpretation of the formal objective: maximize expected benefit under a finite node memory budget while preserving weights and fairness.
+This is the exact resource-allocation interpretation of the formal objective: maximize expected benefit per unit of scarce shared memory while preserving weights and fairness.
