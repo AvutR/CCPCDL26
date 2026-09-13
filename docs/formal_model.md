@@ -24,17 +24,13 @@
 ## 2. Objective
 
 $$
-
 \min_{x,y} \; \sum_{t}\sum_{i=1}^{N} \Big[ C_{\text{warm}}\cdot \text{warm}_{i,t} + C_{\text{cold}}\cdot P(\text{miss}_{i,t}) + C_{\text{migrate}}\cdot \text{evict}_{i,t} + C_{\text{SLO}}\cdot \mathbb{1}(\text{SLO}_i \text{ violated at } t)\Big]
-
 $$
 
 Per-tenant expected cost, expanded:
 
 $$
-
 L_{i,t} = \sum_{k} p_{i,k,t}\Big[(1-x_{i,k,t})\, c^{\text{cold}}_k + x_{i,k,t}\, c^{\text{warm}}\Big] + C_{\text{migrate}}\sum_k \text{evict}_{i,k,t} + C_{\text{SLO}}\cdot \mathbb{1}[\text{SLO}_i\text{ violated}]
-
 $$
 
 with $c^{\text{cold}}_k = s_k$ (calibrated lognormal per tool, per the calibration sources) and $c^{\text{warm}}$ a small near-constant (≈25ms resume).
@@ -44,43 +40,33 @@ with $c^{\text{cold}}_k = s_k$ (calibrated lognormal per tool, per the calibrati
 **Shared capacity:**
 
 $$
-
 \sum_{i,k} m_k\, x_{i,k,t} \;\le\; C \qquad \forall t
-
 $$
 
 **Prewarm-trigger bookkeeping:**
 
 $$
-
 y_{i,k,t} \;\ge\; x_{i,k,t} - x_{i,k,t-1} \qquad \forall i,k,t
-
 $$
 
 **Prewarm rate limit** (prevents instantiating unlimited sandboxes in one step):
 
 $$
-
 \sum_{i,k} m_k\, y_{i,k,t} \;\le\; R_t \qquad \forall t
-
 $$
 
 ## 4. SLO indicator
 
 $$
-
 v_{i,t} = \mathbb{1}\big[L_{i,t} > \tau_i\big], \qquad
 L_{i,t} = \begin{cases} L_k^{\text{warm}} & \text{if warm hit} \\ L_k^{\text{warm}} + s_k & \text{if cold} \end{cases}
-
 $$
 
 ## 5. Fairness
 
 $$
-
 q_i = \frac{\text{weighted cold-start penalty for tenant } i}{\text{forecast-weighted demand for tenant } i + \epsilon}, \qquad
 \Phi_t = \sum_i (q_i - \bar q)^2
-
 $$
 
 $\Phi_t$ enters the objective with weight $\rho$. Set $\rho = 0$ for the first working run — get the core policy running and report fairness purely as a metric; enable the penalty once early numbers look reasonable.
@@ -90,9 +76,7 @@ $\Phi_t$ enters the objective with weight $\rho$. Set $\rho = 0$ for the first w
 Candidates are ranked by expected value **density** — value per unit of shared capacity consumed:
 
 $$
-
 M_{i,k,t} = \frac{w_i\, \ell_i\, p_{i,k,t}\, s_k}{m_k + \eta\, c_k}
-
 $$
 
 Dividing by resource cost is the standard greedy rule for capacity-constrained allocation: it prevents one large, memory-hungry sandbox from being admitted over several smaller ones that would jointly deliver more value in the same space.
