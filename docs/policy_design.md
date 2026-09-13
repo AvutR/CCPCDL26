@@ -1,23 +1,31 @@
-# Greedy Marginal-Value Knapsack Policy
+# Greedy Marginal-Value Density Knapsack Policy
 
 ## Objective-mapped formulation
 
-For each tenant i and tool k at timestep t, define the candidate warm value as:
+For each tenant i and tool k at timestep t, define the candidate warm value
+density — value per unit of shared capacity consumed:
 
-value_{i,k,t} = w_i × P_i,k,t(need) × cold_start_cost_avoided_{i,k,t} − holding_cost_{i,k,t}
+M_{i,k,t} = (w_i × P_i,k,t(need) × cold_start_cost_avoided_{i,k,t}) / (mem_{i,k} + η × prewarm_cost_{i,k,t})
 
 where:
 
 - w_i is the tenant weight used for fairness
 - P_i,k,t(need) is the tenant forecast probability that tool k is needed next
 - cold_start_cost_avoided_{i,k,t} is the latency or cost avoided by keeping the sandbox warm instead of cold starting it
-- holding_cost_{i,k,t} is the marginal cost of occupying warm memory budget for that candidate
+- mem_{i,k} is the memory footprint of the candidate sandbox
+- prewarm_cost_{i,k,t} is the marginal cost of prewarming/holding that candidate warm
+- η converts prewarm cost into memory-comparable units
+
+Ranking by density rather than raw value is the standard greedy rule for
+capacity-constrained allocation: it avoids letting one large, memory-hungry
+sandbox get admitted over several smaller ones that would jointly deliver
+more value in the same space.
 
 The platform chooses a subset of candidates to keep warm under the shared-capacity constraint:
 
 Σ_i mem_{i,t} ≤ Capacity_node
 
-This is exactly the same pattern as the formal objective in the project model: the policy chooses the warm set that maximizes expected benefit under a scarce resource budget.
+This is exactly the same pattern as the formal objective in the project model: the policy chooses the warm set that maximizes expected benefit per unit of scarce resource.
 
 ## Full pseudocode
 
@@ -35,8 +43,10 @@ for each timestep t:
         for each tool k in predicted_dist[i]:
             if P_i,k,t(need) > 0:
                 cold_start_cost_avoided = C_cold × expected_miss_penalty(i, k, t)
-                holding_cost = α × mem_{i,k} + β × expected_residency_cost(i, k, t)
-                value = w_i × P_i,k,t(need) × cold_start_cost_avoided − holding_cost
+                prewarm_cost = α × mem_{i,k} + β × expected_residency_cost(i, k, t)
+                numerator = w_i × P_i,k,t(need) × cold_start_cost_avoided
+                denominator = mem_{i,k} + eta × prewarm_cost
+                value = numerator / denominator
                 candidate_list.append({tenant=i, tool=k, value=value, mem=mem_{i,k}})
 
     sort candidate_list by value descending
@@ -72,8 +82,8 @@ for each timestep t:
 1. Every prediction becomes a candidate warm-sandbox placement.
 2. The platform ranks all possible placements globally instead of per tenant.
 3. Warm memory is treated as a finite shared knapsack.
-4. Eviction is not arbitrary; it is driven by the lowest marginal value under the same objective.
-5. The heuristic is therefore not a disconnected trick — it is a direct greedily sorted approximation of the constrained objective.
+4. Eviction is not arbitrary; it is driven by the lowest value density under the same objective.
+5. The heuristic is a direct, greedily sorted approximation of the constrained objective, not a disconnected trick.
 
 ## Why this is defensible in the paper
 

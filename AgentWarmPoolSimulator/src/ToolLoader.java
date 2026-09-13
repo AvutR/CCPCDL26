@@ -32,10 +32,17 @@ public class ToolLoader {
             String toolId =
                     parts[0].trim();
 
-            double memFootprint =
+            // tools.csv stores mem_mb in megabytes, but SystemState's
+            // capacity (see Main.java) is in gigabytes — convert here so
+            // canFit() compares like units. Without this, every tool
+            // "needs" ~1000x more capacity than exists and nothing can
+            // ever be warmed, regardless of policy.
+            double memFootprintMb =
                     Double.parseDouble(
                             parts[1].trim()
                     );
+
+            double memFootprint = memFootprintMb / 1024.0;
 
             double imagePullMs =
                     Double.parseDouble(
