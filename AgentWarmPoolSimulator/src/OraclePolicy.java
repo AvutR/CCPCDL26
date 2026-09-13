@@ -14,6 +14,10 @@ public class OraclePolicy implements Policy {
 
             String trueTool = request.getTrueNextTool();
 
+            if (trueTool == null || !tools.containsKey(trueTool)) {
+                continue;
+            }
+
             if(!state.isWarm(trueTool)) {
                 decisions.add(Decision.warm(trueTool));
 
