@@ -33,9 +33,9 @@ public class ToolLoader {
                     parts[0].trim();
 
             double memFootprint =
-                    Double.parseDouble(
-                            parts[1].trim()
-                    );
+                   Double.parseDouble(
+                           parts[1].trim()
+                    ) / 1024.0;
 
             double imagePullMs =
                     Double.parseDouble(
